@@ -1,0 +1,8 @@
+[package]
+name = "iec_61850_hack"
+version = "0.1.0"
+authors = ["Guillaume Tucker <gtucker.io>"]
+edition = "2021"
+
+[dependencies]
+iec_61850_lib = { git = "https://github.com/OpenEnergyTools/iec61850lib.git" }
