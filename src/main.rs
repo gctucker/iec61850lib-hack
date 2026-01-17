@@ -1,5 +1,6 @@
 use iec_61850_lib::decode_basics::decode_ethernet_header;
 use iec_61850_lib::decode_goose::decode_goose_pdu;
+use iec_61850_lib::decode_smv::decode_smv;
 use iec_61850_lib::encode_goose::encode_goose;
 use iec_61850_lib::encode_smv::encode_smv;
 use iec_61850_lib::types::{
@@ -115,11 +116,38 @@ fn do_encode_smv() -> Vec<u8> {
     encode_smv(&header, &pdu).unwrap()
 }
 
+fn do_decode_smv(packet: &[u8]) {
+    let mut header = EthernetHeader::default();
+    let pos = decode_ethernet_header(&mut header, packet);
+
+    match decode_smv(packet, pos) {
+        Ok(pdu) => {
+            println!("Number of ASDUs: {}", pdu.no_asdu);
+
+            for asdu in &pdu.sav_asdu {
+                println!("SV ID: {}", asdu.msv_id);
+                println!("Sample Count: {}", asdu.smp_cnt);
+                println!("Number of samples: {}", asdu.all_data.len());
+
+                // Process samples
+                for (i, sample) in asdu.all_data.iter().enumerate() {
+                    println!("  Sample {}: value={}, quality={}",
+                             i, sample.value, sample.quality.is_good());
+                }
+            }
+        }
+        Err(e) => eprintln!("Decoding failed: {:?}", e),
+    }
+}
+
 fn main() {
+    println!("--- GOOSE ---");
     let frame = do_encode_goose();
     println!("Encoded GOOSE frame: {} bytes", frame.len());
     do_decode_goose(&frame);
 
+    println!("\n--- SMV ---");
     let frame = do_encode_smv();
     println!("Encoded SMV frame: {} bytes", frame.len());
+    do_decode_smv(&frame);
 }
