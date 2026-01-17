@@ -1,10 +1,14 @@
 use iec_61850_lib::decode_basics::decode_ethernet_header;
 use iec_61850_lib::decode_goose::decode_goose_pdu;
 use iec_61850_lib::encode_goose::encode_goose;
+use iec_61850_lib::encode_smv::encode_smv;
 use iec_61850_lib::types::{
     EthernetHeader,
     IECGoosePdu,
     IECData,
+    Sample,
+    SavAsdu,
+    SavPdu,
     TimeQuality,
     Timestamp,
 };
@@ -71,8 +75,51 @@ fn do_decode_goose(packet: &[u8]) {
     }
 }
 
+fn do_encode_smv() -> Vec<u8> {
+    let header = EthernetHeader {
+        dst_addr: [0x01, 0x0c, 0xcd, 0x04, 0x00, 0x01],
+        src_addr: [0x00, 0x11, 0x22, 0x33, 0x44, 0x55],
+        tpid: None,
+        tci: None,
+        ether_type: [0x88, 0xba],  // SMV EtherType
+        appid: [0x40, 0x00],
+        length: [0x00, 0x00],
+    };
+
+    let samples = vec![
+        Sample::new(1000, 0),    // value, quality
+        Sample::new(2000, 0),
+        Sample::new(3000, 0),
+    ];
+
+    let asdu = SavAsdu {
+        msv_id: "IED1_SMV1".to_string(),
+        dat_set: None,
+        smp_cnt: 0,
+        conf_rev: 1,
+        refr_tm: None,
+        smp_synch: 0,
+        smp_rate: Some(4800),
+        all_data: samples,
+        smp_mod: None,
+        gm_identity: None,
+    };
+
+    let pdu = SavPdu {
+        sim: false,
+        no_asdu: 1,
+        sav_asdu: vec![asdu],
+        security: None,
+    };
+
+    encode_smv(&header, &pdu).unwrap()
+}
+
 fn main() {
     let frame = do_encode_goose();
     println!("Encoded GOOSE frame: {} bytes", frame.len());
     do_decode_goose(&frame);
+
+    let frame = do_encode_smv();
+    println!("Encoded SMV frame: {} bytes", frame.len());
 }
