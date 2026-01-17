@@ -1,3 +1,5 @@
+use iec_61850_lib::decode_basics::decode_ethernet_header;
+use iec_61850_lib::decode_goose::decode_goose_pdu;
 use iec_61850_lib::encode_goose::encode_goose;
 use iec_61850_lib::types::{
     EthernetHeader,
@@ -7,7 +9,7 @@ use iec_61850_lib::types::{
     Timestamp,
 };
 
-fn main() {
+fn do_encode_goose() -> Vec<u8> {
     let header = EthernetHeader {
         dst_addr: [0x01, 0x0c, 0xcd, 0x01, 0x00, 0x00],
         src_addr: [0x00, 0x11, 0x22, 0x33, 0x44, 0x55],
@@ -47,11 +49,30 @@ fn main() {
         ],
     };
 
-    match encode_goose(&header, &pdu) {
-        Ok(frame) => {
-            println!("Encoded GOOSE frame: {} bytes", frame.len());
-            // Send frame to network...
+    encode_goose(&header, &pdu).unwrap()
+}
+
+fn do_decode_goose(packet: &[u8]) {
+    let mut header = EthernetHeader::default();
+    let pos = decode_ethernet_header(&mut header, packet);
+
+    match decode_goose_pdu(packet, pos) {
+        Ok(pdu) => {
+            println!("GOOSE ID: {}", pdu.go_id);
+            println!("State Number: {}", pdu.st_num);
+            println!("Sequence Number: {}", pdu.sq_num);
+            println!("Data entries: {}", pdu.all_data.len());
+
+            for data in &pdu.all_data {
+                println!("  {:?}", data);
+            }
         }
-        Err(e) => eprintln!("Encoding failed: {:?}", e),
+        Err(e) => eprintln!("Decoding failed: {:?}", e),
     }
+}
+
+fn main() {
+    let frame = do_encode_goose();
+    println!("Encoded GOOSE frame: {} bytes", frame.len());
+    do_decode_goose(&frame);
 }
