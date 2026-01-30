@@ -19,7 +19,7 @@ fn do_encode_goose() -> Vec<u8> {
         dst_addr: [0x01, 0x0c, 0xcd, 0x01, 0x00, 0x00],
         src_addr: [0x00, 0x11, 0x22, 0x33, 0x44, 0x55],
         tpid: Some([0x81, 0x00]),
-        tci: Some([0xa0, 0x00]),
+        tci: Some([0x80, 0x00]),
         ether_type: [0x88, 0xb8],
         appid: [0x00, 0x01],
         length: [0x00, 0x00],
@@ -94,7 +94,7 @@ fn do_encode_smv() -> Vec<u8> {
     ];
 
     let asdu = SavAsdu {
-        msv_id: "IED1_SMV1".to_string(),
+        msv_id: "AA1E1Q01BCLD1/LLN0.dataSetName".to_string(),
         dat_set: None,
         smp_cnt: 0,
         conf_rev: 1,
