@@ -61,6 +61,9 @@ fn do_decode_goose(packet: &[u8]) {
     let mut header = EthernetHeader::default();
     let pos = decode_ethernet_header(&mut header, packet);
 
+    println!("VLAN priority: {}", header.get_vlan_priority());
+    println!("len: {}", header.length[0]);
+
     match decode_goose_pdu(packet, pos) {
         Ok(pdu) => {
             println!("GOOSE ID: {}", pdu.go_id);
