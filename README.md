@@ -4,6 +4,17 @@ IEC61850 Rust Hacks
 This small project is to experiment with the
 [`iec61850lib`](https://github.com/OpenEnergyTools/iec61850lib) Rust crate.
 
+To checkout the code with the submodules:
+
+```
+git clone https://github.com/gctucker/iec61850lib-hack.git
+cd iec61850lib-hack
+git submodule init
+git submodule update
+```
+
+Then to build and run it:
+
 ```
 $ cargo run
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
