@@ -5,4 +5,4 @@ authors = ["Guillaume Tucker <gtucker.io>"]
 edition = "2021"
 
 [dependencies]
-iec_61850_lib = { path = "iec61850lib" }
+iec_61850 = { path = "iec61850" }

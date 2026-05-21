@@ -1,3 +1,3 @@
-[submodule "iec61850lib"]
-	path = iec61850lib
-	url = https://github.com/gctucker/iec61850lib.git
+[submodule "iec61850"]
+	path = iec61850
+	url = https://github.com/gctucker/iec61850.git

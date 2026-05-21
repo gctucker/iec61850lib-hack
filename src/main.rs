@@ -1,9 +1,9 @@
-use iec_61850_lib::decode_basics::decode_ethernet_header;
-use iec_61850_lib::decode_goose::decode_goose_pdu;
-use iec_61850_lib::decode_smv::decode_smv;
-use iec_61850_lib::encode_goose::encode_goose;
-use iec_61850_lib::encode_smv::encode_smv;
-use iec_61850_lib::types::{
+use iec_61850::decode_basics::decode_ethernet_header;
+use iec_61850::decode_goose::decode_goose_pdu;
+use iec_61850::decode_smv::decode_smv;
+use iec_61850::encode_goose::encode_goose;
+use iec_61850::encode_smv::encode_smv;
+use iec_61850::types::{
     EthernetHeader,
     IECGoosePdu,
     IECData,
