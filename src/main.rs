@@ -131,8 +131,11 @@ fn do_decode_smv(packet: &[u8]) {
 
                 // Process samples
                 for (i, sample) in asdu.all_data.iter().enumerate() {
-                    println!("  Sample {}: value={}, quality={}",
-                             i, sample.value, sample.quality.is_good());
+                    println!(
+                        "  Sample {}: value={}, quality={}",
+                        i, sample.value,
+                        if sample.quality.is_good() { "good" } else { "bad" }
+                    );
                 }
             }
         }

@@ -17,7 +17,7 @@ Then to build and run it:
 
 ```
 $ cargo run
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.56s
      Running `target/debug/iec_61850_hack`
 --- GOOSE ---
 Encoded GOOSE frame: 113 bytes
@@ -34,7 +34,7 @@ Number of ASDUs: 1
 SV ID: AA1E1Q01BCLD1/LLN0.dataSetName
 Sample Count: 0
 Number of samples: 3
-  Sample 0: value=1000, quality=true
-  Sample 1: value=2000, quality=true
-  Sample 2: value=3000, quality=true
+  Sample 0: value=1000, quality=good
+  Sample 1: value=2000, quality=good
+  Sample 2: value=3000, quality=good
 ```
