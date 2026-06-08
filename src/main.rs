@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (C) 2026 Guillaume Tucker
+
 use iec_61850::decode_basics::decode_ethernet_header;
 use iec_61850::decode_goose::decode_goose_pdu;
 use iec_61850::decode_smv::decode_smv;
