@@ -17,6 +17,8 @@ use iec_61850::types::{
     Timestamp,
 };
 
+mod svgen;
+
 fn do_encode_goose() -> Vec<u8> {
     let header = EthernetHeader {
         dst_addr: [0x01, 0x0c, 0xcd, 0x01, 0x00, 0x00],
@@ -156,4 +158,6 @@ fn main() {
     let frame = do_encode_smv();
     println!("Encoded SMV frame: {} bytes", frame.len());
     do_decode_smv(&frame);
+
+    svgen::hello();
 }
