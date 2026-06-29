@@ -17,6 +17,7 @@ use iec_61850::types::{
     Timestamp,
 };
 
+mod pcap_hack;
 mod svgen;
 
 fn do_encode_goose() -> Vec<u8> {
@@ -160,4 +161,5 @@ fn main() {
     do_decode_smv(&frame);
 
     svgen::hello();
+    pcap_hack::pcap();
 }
