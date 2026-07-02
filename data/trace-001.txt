@@ -1,0 +1,62 @@
+$ python generate_pcap.py --loop 1 sv-001.pcap -p svIDgtucker
+$ md5sum sv-001.pcap
+f303ea836321fafd62bed70eed7ea31f  sv-001.pcap
+$ sudo bittwist -vv -i wlp2s0 sv-001.pcap -l1
+$ sudo python -m svtracing.svtrace --live --conf svtrace.cfg --machine vm
+$ uname -a
+Linux stardust 6.12.94+deb13-rt-amd64 #1 SMP PREEMPT_RT Debian 6.12.94-1 (2026-06-20) x86_64 GNU/Linux
+
+-------------------------------------------------------------------------------
+
+16:31:53.606514 #1 (127 bytes)
+	0x0000:  010c cd01 0001 c4b5 1200 0001 88ba 4000
+	0x0010:  0071 0000 0000 6067 8001 01a2 6230 6080
+	0x0020:  0f73 7649 4467 7475 636b 6572 3030 3030
+	0x0030:  8202 0000 8304 0000 0001 8501 0087 4000
+	0x0040:  0000 0000 0000 0000 0004 c800 0000 00ff
+	0x0050:  fffb 3800 0000 0000 0000 0000 0000 0000
+	0x0060:  001f 7d00 0000 00ff fff0 4200 0000 00ff
+	0x0070:  fff0 4200 0000 0000 0000 0000 0000 00
+16:31:53.606594 #2 (127 bytes)
+	0x0000:  010c cd01 0001 c4b5 1200 0001 88ba 4000
+	0x0010:  0071 0000 0000 6067 8001 01a2 6230 6080
+	0x0020:  0f73 7649 4467 7475 636b 6572 3030 3031
+	0x0030:  8202 0000 8304 0000 0001 8501 0087 4000
+	0x0040:  0000 0000 0000 0000 0004 c800 0000 00ff
+	0x0050:  fffb 3800 0000 0000 0000 0000 0000 0000
+	0x0060:  001f 7d00 0000 00ff fff0 4200 0000 00ff
+	0x0070:  fff0 4200 0000 0000 0000 0000 0000 00
+16:31:53.606647 #3 (127 bytes)
+
+[...]
+
+sent = 64 packets, 65024 bits, 8128 bytes
+throughput = 946 pps, 0.9616 Mbps, 0.0010 Gbps
+elapsed time = 0.067622 seconds
+
+-------------------------------------------------------------------------------
+
+Interface: wlp2s0
+Buffer:    100000
+Waiting for SV...
+Detected SV stream: svIDgtucker0000
+PID 111
+chrt -f 1 bpftrace --unsafe /home/gtucker/project/energy/seapath/svtrace/svtracing/live.bt 15 1323 50 111 111
+
+[...]
+
+@latency:
+[256K, 512K)           1 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+DEBUG total:      684
+DEBUG proto:      64
+DEBUG stream:     1
+DEBUG skb:        2560
+DEBUG skb proto:  105
+DEBUG skb pid:    0
+SV received: 1
+SV missed: 0
+SV dropped: 0
+SV buffer fill: 0%
+Min Latency: 347364 us
+Max Latency: 347364 us
+Mean Latency: @avg_latency: 347364
