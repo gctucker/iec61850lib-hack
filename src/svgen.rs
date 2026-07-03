@@ -43,18 +43,51 @@ impl Generator {
     }
 }
 
+fn dump(path: &str) {
+    let sv_id = b"svIDgtucker0000";
+    let sv_id_len = sv_id.len() as u8;
+    let mac_src_v =  vec![0xc4, 0xb5, 0x12, 0x00, 0x00, 0x01];
+    let mac_dest_v = vec![0x01, 0x0c, 0xcd, 0x01, 0x00, 0x01];
+
+    let mut data: Vec<u8> = Vec::new();
+    data.extend(mac_dest_v);
+    data.extend(mac_src_v);
+    data.extend(vec![
+        0x88, 0xBA,              // Ethertype
+        0x40, 0x00,              // AppId
+        0x00, 0x62 + sv_id_len,  // Length (ToDo: calculate)
+        0x00, 0x00, 0x00, 0x00,  // Reserved 1 & 2
+        0x60, 0x58 + sv_id_len,  // savPDU 0x60 length
+        0x80, 0x01, 0x01,        // Number of asdu 0x80 L(1) 8
+        0xa2, 0x53 + sv_id_len,  // Sequence of asdu 0xA2 L
+        0x30, 0x51 + sv_id_len,  // Sequence ASDU1 0x30 L
+        0x80, sv_id_len,         // SvID 0x80 L Values
+    ]);
+    data.extend(sv_id.to_vec()); // SvID string
+    data.extend(vec![
+        0x82, 0x02, 0x00, 0x00,              // smpCnt 0x82 L(2) value
+        0x83, 0x04, 0x00, 0x00, 0x00, 0x01,  // ConfRev 0x83 L(4) value
+        0x85, 0x01, 0x00,                    // smpSync 0x85 L(1) value
+        0x87, 0x40,                          // Data 0x87 L(64) Dataset 8 CH
+    ]);
+    let len = data.len() as u32;
+    println!("Data length: {len}");
+    let hdr = PacketHeader {
+        ts: libc::timeval { tv_sec: 0, tv_usec: 0 },
+        caplen: len,
+        len: len,
+    };
+    let pkt = Packet {header: &hdr, data: data.as_slice()};
+    let cap = Capture::dead(Linktype::ETHERNET).unwrap();
+    let mut dump = cap.savefile(path).unwrap();
+    println!("Saving to {path}");
+    dump.write(&pkt);
+
+}
+
 pub fn hello() {
     let mut gen = make50hz(Phase::Ph0);
-    let mut cap = Capture::dead(Linktype::ETHERNET).unwrap();
-    let hdr = PacketHeader {
-        ts: libc::timeval { tv_sec: 1, tv_usec: 0 },
-        caplen: 2,
-        len: 2,
-    };
-    let data = vec![0x34, 0x12];
-    let pkt = Packet {header: &hdr, data: &data};
-    let mut dump = cap.savefile("dump.pcap").unwrap();
-    dump.write(&pkt);
+    dump("dump.pcap");
     while gen.t < 0.01 /*3.0*/ {
         let value = gen.gen();
         println!("value({}): {}", gen.t, value);
