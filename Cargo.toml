@@ -10,4 +10,5 @@ edition = "2021"
 [dependencies]
 iec_61850 = { path = "iec61850" }
 pcap = "2.4.0"
+pnet = "0.35.0"
 libc = "0.2"

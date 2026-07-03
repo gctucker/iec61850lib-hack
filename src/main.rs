@@ -17,6 +17,7 @@ use iec_61850::types::{
     Timestamp,
 };
 
+mod etherhack;
 mod pcap_hack;
 mod svgen;
 
@@ -162,4 +163,5 @@ fn main() {
 
     svgen::hello();
     pcap_hack::pcap();
+    etherhack::sink();
 }
