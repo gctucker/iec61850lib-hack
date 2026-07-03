@@ -1,8 +1,12 @@
 $ python generate_pcap.py --loop 1 sv-001.pcap -p svIDgtucker
 $ md5sum sv-001.pcap
 f303ea836321fafd62bed70eed7ea31f  sv-001.pcap
-$ sudo bittwist -vv -i wlp2s0 sv-001.pcap -l1
+$ cat svtrace.cfg
+[DEFAULT]
+SV_INTERFACE=wlp2s0
+SV_BUFFER_SIZE=100000
 $ sudo python -m svtracing.svtrace --live --conf svtrace.cfg --machine vm
+$ sudo bittwist -vv -i wlp2s0 sv-001.pcap -l1
 $ uname -a
 Linux stardust 6.12.94+deb13-rt-amd64 #1 SMP PREEMPT_RT Debian 6.12.94-1 (2026-06-20) x86_64 GNU/Linux
 
