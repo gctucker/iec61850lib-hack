@@ -24,6 +24,7 @@ enum Phase {
     Ph2 = 2,
 }
 
+// ToDo: Generator::new() or ::new50hz()
 fn make50hz(phase: Phase) -> Generator {
     let freq = 50.0;
     let peak = 240.0 * 2_f32.sqrt();
@@ -49,7 +50,7 @@ fn dump(path: &str) {
     let mac_src_v =  vec![0xc4, 0xb5, 0x12, 0x00, 0x00, 0x01];
     let mac_dest_v = vec![0x01, 0x0c, 0xcd, 0x01, 0x00, 0x01];
 
-    let mut data: Vec<u8> = Vec::new();
+    let mut data: Vec<u8> = Vec::with_capacity(0x100);
     data.extend(mac_dest_v);
     data.extend(mac_src_v);
     data.extend(vec![
@@ -70,10 +71,11 @@ fn dump(path: &str) {
         0x85, 0x01, 0x00,                    // smpSync 0x85 L(1) value
         0x87, 0x40,                          // Data 0x87 L(64) Dataset 8 CH
     ]);
+    // ToDo: add payload with 64 bytes (8 channels with 8 bytes each?)
     let len = data.len() as u32;
-    println!("Data length: {len}");
+    println!("Data length: {len} 0x{len:04x}");
     let hdr = PacketHeader {
-        ts: libc::timeval { tv_sec: 0, tv_usec: 0 },
+        ts: libc::timeval {tv_sec: 0, tv_usec: 0},
         caplen: len,
         len: len,
     };
@@ -82,13 +84,12 @@ fn dump(path: &str) {
     let mut dump = cap.savefile(path).unwrap();
     println!("Saving to {path}");
     dump.write(&pkt);
-
 }
 
 pub fn hello() {
     let mut gen = make50hz(Phase::Ph0);
     dump("dump.pcap");
-    while gen.t < 0.01 /*3.0*/ {
+    while gen.t < 0.0 /*3.0*/ {
         let value = gen.gen();
         println!("value({}): {}", gen.t, value);
         gen.step();
