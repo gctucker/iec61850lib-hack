@@ -15,7 +15,7 @@ struct Generator {
     ph: f32,
     t: f32,
     w: f32,
-    step: f32,
+    step: f32, // 250us (4kHz) or (1 / 4.8kHz) ?
 }
 
 enum Phase {
@@ -27,7 +27,7 @@ enum Phase {
 // ToDo: Generator::new() or ::new50hz()
 fn make50hz(phase: Phase) -> Generator {
     let freq = 50.0;
-    let peak = 240.0 * 2_f32.sqrt();
+    let peak = 240.0 * 2f32.sqrt();
     let ph = phase as u32 as f32 * 2.0 * std::f32::consts::PI / 3.0;
     let w = 2.0 * std::f32::consts::PI * freq;
     Generator{_f: 50.0, a: peak, ph: ph, t: 0.0, w: w, step: 0.00025}
@@ -45,19 +45,22 @@ impl Generator {
 }
 
 fn dump(path: &str) {
-    let sv_id = b"svIDgtucker0000";
+    let sv_id = b"svIDdevkit000000";
     let sv_id_len = sv_id.len() as u8;
-    let mac_src_v =  vec![0xc4, 0xb5, 0x12, 0x00, 0x00, 0x01];
-    let mac_dest_v = vec![0x01, 0x0c, 0xcd, 0x01, 0x00, 0x01];
+    let mac_src_v = vec![0xc4, 0xb5, 0x12, 0x00, 0x00, 0x01];
+    let mac_dst_v = vec![0x01, 0x0c, 0xcd, 0x01, 0x00, 0x01];
+    println!("SV ID LEN {sv_id_len} 0x{sv_id_len:02x}");
 
     let mut data: Vec<u8> = Vec::with_capacity(0x100);
-    data.extend(mac_dest_v);
+    data.extend(mac_dst_v);
     data.extend(mac_src_v);
     data.extend(vec![
         0x88, 0xBA,              // Ethertype
         0x40, 0x00,              // AppId
         0x00, 0x62 + sv_id_len,  // Length (ToDo: calculate)
         0x00, 0x00, 0x00, 0x00,  // Reserved 1 & 2
+    ]);
+    data.extend(vec![
         0x60, 0x58 + sv_id_len,  // savPDU 0x60 length
         0x80, 0x01, 0x01,        // Number of asdu 0x80 L(1) 8
         0xa2, 0x53 + sv_id_len,  // Sequence of asdu 0xA2 L
