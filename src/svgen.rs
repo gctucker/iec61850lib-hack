@@ -9,13 +9,14 @@ use std;
 use libc;
 use pcap::{Capture, Linktype, Packet, PacketHeader};
 
-struct Generator {
+pub struct Generator {
     _f: f32,
-    a: f32,
-    ph: f32,
+    _a: f32,
+    _ph: f32,
+    _w: f32,
+    _step: f32,
     t: f32,
-    w: f32,
-    step: f32, // 250us (4kHz) or (1 / 4.8kHz) ?
+    data: Vec<f32>,
 }
 
 enum Phase {
@@ -24,23 +25,49 @@ enum Phase {
     Ph2 = 2,
 }
 
-// ToDo: Generator::new() or ::new50hz()
-fn make50hz(phase: Phase) -> Generator {
-    let freq = 50.0;
-    let peak = 240.0 * 2f32.sqrt();
-    let ph = phase as u32 as f32 * 2.0 * std::f32::consts::PI / 3.0;
-    let w = 2.0 * std::f32::consts::PI * freq;
-    Generator{_f: 50.0, a: peak, ph: ph, t: 0.0, w: w, step: 0.00025}
-}
-
 impl Generator {
-    fn gen(&self) -> f32 {
-        let x: f32 = self.w * self.t + self.ph;
-        self.a * x.sin()
+    pub fn new50hz(phase: Phase) -> Generator {
+        let freq = 50.0;
+        let peak = 240.0 * 2f32.sqrt();
+        let ph = phase as u32 as f32 * 2.0 * std::f32::consts::PI / 3.0;
+        let w = 2.0 * std::f32::consts::PI * freq;
+        let step = 1.0 / 4000.0;
+        Generator{
+            _f: 50.0, _a: peak, _ph: ph, _w: w, _step: step,
+            t: 0.0, data: Vec::new(),
+        }
     }
 
-    fn step(&mut self) {
-        self.t += self.step;
+    pub fn grow(&mut self, duration: f32) {
+        self.data.reserve((duration / self._step) as usize);
+    }
+
+    pub fn sample(&mut self) -> f32 {
+        let x: f32 = self._w * self.t + self._ph;
+        let value = self._a * x.sin();
+        self.data.push(value);
+        self.t = self.data.len() as f32 * self._step;
+        value
+    }
+
+    pub fn run(&mut self, duration: f32) {
+        self.grow(duration);
+        let finish = self.t + duration;
+        while self.t < finish {
+            self.sample();
+        }
+    }
+
+    pub fn vec(&self) -> Vec<f32> {
+        self.data.clone()
+    }
+
+    pub fn vec_i32(&self, scaling: f32) -> Vec<i32> {
+        let mut vec: Vec<i32> = Vec::with_capacity(self.data.len());
+        for sample in &self.data {
+            vec.push((sample * scaling) as i32);
+        }
+        vec
     }
 }
 
@@ -90,11 +117,17 @@ fn dump(path: &str) {
 }
 
 pub fn hello() {
-    let mut gen = make50hz(Phase::Ph0);
+    let mut gen = Generator::new50hz(Phase::Ph0);
     dump("dump.pcap");
     while gen.t < 0.0 /*3.0*/ {
-        let value = gen.gen();
-        println!("value({}): {}", gen.t, value);
-        gen.step();
+        let t = gen.t;
+        let value = gen.sample();
+        println!("value({}): {}", t, value);
     }
+}
+
+pub fn run(duration: f32) -> Generator {
+    let mut gen = Generator::new50hz(Phase::Ph0);
+    gen.run(duration);
+    gen
 }

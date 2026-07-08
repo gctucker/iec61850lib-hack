@@ -169,6 +169,10 @@ fn main() {
     dump.write_all(&frame).unwrap();
     do_decode_smv(&frame);
 
+    let gen = svgen::run(0.1);
+    let samples = gen.vec_i32(100.0);
+
+    /*
     svgen::hello();
     pcap_hack::pcap();
     let pkt = etherhack::sink();
@@ -179,4 +183,5 @@ fn main() {
     } else {
         println!("INVALID SV FRAME");
     }
+    */
 }
