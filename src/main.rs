@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Guillaume Tucker
 
+use std::fs::File;
+use std::io::Write;
+
 use iec_61850::decode_basics::decode_ethernet_header;
 use iec_61850::decode_goose::decode_goose_pdu;
-use iec_61850::decode_smv::decode_smv;
+use iec_61850::decode_smv::{decode_smv, is_smv_frame};
 use iec_61850::encode_goose::encode_goose;
 use iec_61850::encode_smv::encode_smv;
 use iec_61850::types::{
@@ -101,7 +104,8 @@ fn do_encode_smv() -> Vec<u8> {
     ];
 
     let asdu = SavAsdu {
-        msv_id: "AA1E1Q01BCLD1/LLN0.dataSetName".to_string(),
+        // msv_id: "AA1E1Q01BCLD1/LLN0.dataSetName".to_string(),
+        msv_id: "svIDdevkit000000".to_string(),
         dat_set: None,
         smp_cnt: 0,
         conf_rev: 1,
@@ -126,6 +130,7 @@ fn do_encode_smv() -> Vec<u8> {
 fn do_decode_smv(packet: &[u8]) {
     let mut header = EthernetHeader::default();
     let pos = decode_ethernet_header(&mut header, packet);
+    println!("header decoded {pos}");
 
     match decode_smv(packet, pos) {
         Ok(pdu) => {
@@ -159,9 +164,19 @@ fn main() {
     println!("\n--- SMV ---");
     let frame = do_encode_smv();
     println!("Encoded SMV frame: {} bytes", frame.len());
+    println!("Saving to sv.bin");
+    let mut dump = File::create("sv.bin").unwrap();
+    dump.write_all(&frame).unwrap();
     do_decode_smv(&frame);
 
     svgen::hello();
     pcap_hack::pcap();
-    etherhack::sink();
+    let pkt = etherhack::sink();
+    println!("PACKET {0}", pkt.len());
+    if is_smv_frame(&pkt) {
+        println!("SV FRAME");
+        do_decode_smv(&pkt);
+    } else {
+        println!("INVALID SV FRAME");
+    }
 }
