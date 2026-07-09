@@ -129,12 +129,8 @@ fn do_encode_smv() -> Vec<u8> {
 }
 
 
-fn encode_smv_data(data: &Vec<(f32, f32)>, sfreq: f32) -> Vec<u8> {
-    let mut samples: Vec<Sample> = Vec::with_capacity(data.len());
-    for (_, value) in data {
-        let s = (*value * 100.0) as i32;
-        samples.push(Sample::new(s, 0));
-    }
+fn encode_sample(value: f32, sfreq: f32) -> Vec<u8> {
+    let samples: Vec<Sample> = vec![Sample::new((value * 100.0) as i32, 0)];
 
     let header = EthernetHeader {
         dst_addr: [0x01, 0x0c, 0xcd, 0x04, 0x00, 0x01],  // TBD
@@ -211,12 +207,14 @@ fn main() {
     do_decode_smv(&frame);
 
     let mut gen = Generator::new50hz(Phase::Ph0);
-    for iter in 0..3 {
+    let sfreq = gen.sfreq();
+    for _iter in 0..3 {
         gen.run(0.008);
-        let frame = encode_smv_data(gen.data(), gen.sfreq());
-        let mut dump = File::create(format!("sv{iter}.bin")).unwrap();
-        dump.write_all(&frame).unwrap();
-        do_decode_smv(&frame);
+        for (time, value) in gen.data() {
+            let frame = encode_sample(*value, sfreq);
+            println!("Time: {time}");
+            do_decode_smv(&frame);
+        }
     }
 
     /*
