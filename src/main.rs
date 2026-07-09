@@ -88,8 +88,6 @@ fn do_decode_goose(packet: &[u8]) {
     }
 }
 
-/* MAC SRC: 52:54:00:12:34:56 */
-
 fn do_encode_smv() -> Vec<u8> {
     let header = EthernetHeader {
         dst_addr: [0x01, 0x0c, 0xcd, 0x04, 0x00, 0x01],
@@ -108,8 +106,7 @@ fn do_encode_smv() -> Vec<u8> {
     ];
 
     let asdu = SavAsdu {
-        // msv_id: "AA1E1Q01BCLD1/LLN0.dataSetName".to_string(),
-        msv_id: "svIDdevkit000000".to_string(),
+        msv_id: "AA1E1Q01BCLD1/LLN0.dataSetName".to_string(),
         dat_set: None,
         smp_cnt: 0,
         conf_rev: 1,
@@ -122,7 +119,48 @@ fn do_encode_smv() -> Vec<u8> {
     };
 
     let pdu = SavPdu {
-        sim: false,
+        sim: true,
+        no_asdu: 1,
+        sav_asdu: vec![asdu],
+        security: None,
+    };
+
+    encode_smv(&header, &pdu).unwrap()
+}
+
+
+fn encode_smv_data(data: &Vec<(f32, f32)>, sfreq: f32) -> Vec<u8> {
+    let mut samples: Vec<Sample> = Vec::with_capacity(data.len());
+    for (_, value) in data {
+        let s = (*value * 100.0) as i32;
+        samples.push(Sample::new(s, 0));
+    }
+
+    let header = EthernetHeader {
+        dst_addr: [0x01, 0x0c, 0xcd, 0x04, 0x00, 0x01],  // TBD
+        src_addr: [0x52, 0x54, 0x00, 0x12, 0x34, 0x56],  // from devkit
+        tpid: None,
+        tci: None,
+        ether_type: [0x88, 0xba],
+        appid: [0x40, 0x00],
+        length: [0x00, 0x00],
+    };
+
+    let asdu = SavAsdu {
+        msv_id: "svIDdevkit000000".to_string(),
+        dat_set: None,
+        smp_cnt: 0,
+        conf_rev: 1,
+        refr_tm: None,
+        smp_synch: 0,
+        smp_rate: Some(sfreq as u16),
+        all_data: samples,
+        smp_mod: None,
+        gm_identity: None,
+    };
+
+    let pdu = SavPdu {
+        sim: true,
         no_asdu: 1,
         sav_asdu: vec![asdu],
         security: None,
@@ -134,7 +172,6 @@ fn do_encode_smv() -> Vec<u8> {
 fn do_decode_smv(packet: &[u8]) {
     let mut header = EthernetHeader::default();
     let pos = decode_ethernet_header(&mut header, packet);
-    println!("header decoded {pos}");
 
     match decode_smv(packet, pos) {
         Ok(pdu) => {
@@ -174,14 +211,12 @@ fn main() {
     do_decode_smv(&frame);
 
     let mut gen = Generator::new50hz(Phase::Ph0);
-    for packet in 0..3 {
-        gen.run(0.01);
-        let samples = gen.vec_i32(100.0);
-        let mut i = 0;
-        for (time, value) in samples {
-            println!("[{:02}:{:03}]  {:0.6}  {:6}", packet, i, time, value);
-            i += 1;
-        }
+    for iter in 0..3 {
+        gen.run(0.008);
+        let frame = encode_smv_data(gen.data(), gen.sfreq());
+        let mut dump = File::create(format!("sv{iter}.bin")).unwrap();
+        dump.write_all(&frame).unwrap();
+        do_decode_smv(&frame);
     }
 
     /*

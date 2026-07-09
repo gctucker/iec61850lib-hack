@@ -14,10 +14,11 @@ pub struct Generator {
     a: f32,                 // peak amplitude in base unit (e.g. V or A)
     ph: f32,                // phase in radians
     w: f32,                 // angular frequency in rad/s
+    sfreq: f32,             // sampling frequency
     step: f32,              // sampling period
     i: u32,                 // data buffer index
     t0 : f32,               // time offset
-    t: f32,                 // sample time
+    pub t: f32,             // sample time
     data: Vec<(f32, f32)>,  // data buffer with (time, value) samples
 }
 
@@ -34,22 +35,31 @@ impl Generator {
         let peak = 240.0 * 2f32.sqrt();
         let ph = phase as u32 as f32 * 2.0 * std::f32::consts::PI / 3.0;
         let w = 2.0 * std::f32::consts::PI * freq;
-        let step = 1.0 / 4000.0;
+        let sfreq = 4000.0;
+        let step = 1.0 / sfreq;
         Generator{
-            f: 50.0, a: peak, ph: ph, w: w, step: step, i: 0,
+            f: 50.0, a: peak, ph: ph, w: w, sfreq: sfreq, step: step, i: 0,
             t0: 0.0, t: 0.0, data: Vec::new(),
         }
     }
 
-    pub fn grow(&mut self, duration: f32) {
-        self.data.reserve((duration / self.step) as usize);
+    pub fn sfreq(&self) -> f32 {
+        self.sfreq
+    }
+
+    pub fn data(&self) -> &Vec<(f32, f32)> {
+        &self.data
     }
 
     pub fn clear(&mut self) {
         self.data.clear();
         self.i = 0;
         self.t0 = self.t;
-        self.t = self.t0 + self.i as f32 * self.step;
+    }
+
+    pub fn reset(&mut self, offset: f32) {
+        self.t = offset;
+        self.clear();
     }
 
     pub fn sample(&mut self) -> f32 {
@@ -59,7 +69,7 @@ impl Generator {
 
     pub fn run(&mut self, duration: f32) {
         self.clear();
-        self.grow(duration);
+        self.data.reserve((duration / self.step) as usize);
         let finish = self.t + duration;
         while self.t < finish {
             let value = self.sample();
@@ -67,18 +77,6 @@ impl Generator {
             self.i += 1;
             self.t = self.t0 + self.i as f32 * self.step;
         }
-    }
-
-    pub fn vec(&self) -> Vec<(f32, f32)> {
-        self.data.clone()
-    }
-
-    pub fn vec_i32(&self, scaling: f32) -> Vec<(f32, i32)> {
-        let mut vec: Vec<(f32, i32)> = Vec::with_capacity(self.data.len());
-        for (time, value) in &self.data {
-            vec.push((*time, (value * scaling) as i32));
-        }
-        vec
     }
 }
 
