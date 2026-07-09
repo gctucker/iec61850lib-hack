@@ -206,27 +206,30 @@ fn main() {
     dump.write_all(&frame).unwrap();
     do_decode_smv(&frame);
 
+    /* ToDo: group of 8 generators */
     let mut gen = Generator::new50hz(Phase::Ph0);
     let sfreq = gen.sfreq();
-    for _iter in 0..3 {
+    println!("Saving to dump.pcap");
+    let mut dump = pcap_hack::open("dump.pcap");
+    let mut fnum = 0;
+    for iter in 0..3 {
         gen.run(0.008);
         for (time, value) in gen.data() {
             let frame = encode_sample(*value, sfreq);
-            println!("Time: {time}");
-            do_decode_smv(&frame);
+            fnum += 1;
+            println!("[{iter:02}:{fnum:04}]  {time}");
+            pcap_hack::append(&mut dump, &frame);
         }
     }
 
-    /*
-    svgen::hello();
-    pcap_hack::pcap();
-    let pkt = etherhack::sink();
-    println!("PACKET {0}", pkt.len());
-    if is_smv_frame(&pkt) {
-        println!("SV FRAME");
-        do_decode_smv(&pkt);
-    } else {
-        println!("INVALID SV FRAME");
+    let mut eth = etherhack::open("lo");
+    for i in 0..fnum {
+        let pkt = etherhack::recv(&mut eth);
+        if is_smv_frame(&pkt) {
+            println!("SV FRAME {i:04}");
+            do_decode_smv(&pkt);
+        } else {
+            println!("INVALID SV FRAME");
+        }
     }
-    */
 }

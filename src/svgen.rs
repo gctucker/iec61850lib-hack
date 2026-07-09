@@ -124,12 +124,3 @@ fn dump(path: &str) {
     println!("Saving to {path}");
     dump.write(&pkt);
 }
-
-pub fn hello() {
-    let mut gen = Generator::new50hz(Phase::Ph0);
-    dump("dump.pcap");
-    while gen.t < 0.0 /*3.0*/ {
-        let value = gen.sample();
-        println!("value({}): {}", gen.t, value);
-    }
-}
