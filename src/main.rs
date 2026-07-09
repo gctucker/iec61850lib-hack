@@ -129,12 +129,15 @@ fn do_encode_smv() -> Vec<u8> {
 }
 
 
-fn encode_sample(value: f32, sfreq: f32) -> Vec<u8> {
-    let samples: Vec<Sample> = vec![Sample::new((value * 100.0) as i32, 0)];
+fn encode_sample(sample: &[f32], sfreq: f32) -> Vec<u8> {
+    let mut samples: Vec<Sample> = Vec::with_capacity(sample.len());
+    for chan in sample {
+        samples.push(Sample::new((chan * 100.0).round() as i32, 0));
+    }
 
     let header = EthernetHeader {
         dst_addr: [0x01, 0x0c, 0xcd, 0x04, 0x00, 0x01],  // TBD
-        src_addr: [0x52, 0x54, 0x00, 0x12, 0x34, 0x56],  // from devkit
+        src_addr: [0x52, 0x54, 0x00, 0x12, 0x34, 0x56],  // from devkit config
         tpid: None,
         tci: None,
         ether_type: [0x88, 0xba],
@@ -145,7 +148,7 @@ fn encode_sample(value: f32, sfreq: f32) -> Vec<u8> {
     let asdu = SavAsdu {
         msv_id: "svIDdevkit000000".to_string(),
         dat_set: None,
-        smp_cnt: 0,
+        smp_cnt: 1,
         conf_rev: 1,
         refr_tm: None,
         smp_synch: 0,
@@ -163,6 +166,18 @@ fn encode_sample(value: f32, sfreq: f32) -> Vec<u8> {
     };
 
     encode_smv(&header, &pdu).unwrap()
+}
+
+fn decode_sample(packet: &[u8]) -> SavPdu {
+    let mut header = EthernetHeader::default();
+    let pos = decode_ethernet_header(&mut header, packet);
+
+    match decode_smv(packet, pos) {
+        Ok(pdu) => {
+            pdu
+        }
+        Err(e) => panic!("Decoding failed: {:?}", e),
+    }
 }
 
 fn do_decode_smv(packet: &[u8]) {
@@ -206,30 +221,41 @@ fn main() {
     dump.write_all(&frame).unwrap();
     do_decode_smv(&frame);
 
-    /* ToDo: group of 8 generators */
+    println!("\nGenerating data and saving to dump.pcap");
+    /* ToDo: use group of 8 generators for 8 channels */
     let mut gen = Generator::new50hz(Phase::Ph0);
     let sfreq = gen.sfreq();
-    println!("Saving to dump.pcap");
     let mut dump = pcap_hack::open("dump.pcap");
     let mut fnum = 0;
     for iter in 0..3 {
         gen.run(0.008);
         for (time, value) in gen.data() {
-            let frame = encode_sample(*value, sfreq);
-            fnum += 1;
-            println!("[{iter:02}:{fnum:04}]  {time}");
+            let frame = encode_sample(&[*value], sfreq);
+            println!("[{iter:02}:{fnum:04}]  {time:8.6}  {value:06}");
             pcap_hack::append(&mut dump, &frame);
+            fnum += 1;
         }
     }
+    dump.flush().unwrap();
 
+    println!("\nReading {fnum} frames from Ethernet...");
     let mut eth = etherhack::open("lo");
     for i in 0..fnum {
         let pkt = etherhack::recv(&mut eth);
-        if is_smv_frame(&pkt) {
-            println!("SV FRAME {i:04}");
-            do_decode_smv(&pkt);
-        } else {
-            println!("INVALID SV FRAME");
+        if !is_smv_frame(&pkt) {
+            panic!("INVALID SV FRAME");
+        }
+        print!("[{0:04} {1}]", i, pkt.len());
+        let pdu = decode_sample(&pkt);
+        for asdu in &pdu.sav_asdu {
+            for sample in &asdu.all_data {
+                let value = sample.value as f32 / 100.0;
+                println!("  {0:06}  {1:8.3}", sample.value, value);
+            }
+        }
+        if true {
+            // Hack to skip every other packet...
+            _ = etherhack::recv(&mut eth);
         }
     }
 }
