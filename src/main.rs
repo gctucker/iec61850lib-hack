@@ -24,6 +24,8 @@ mod etherhack;
 mod pcap_hack;
 mod svgen;
 
+use svgen::{Generator, Phase};
+
 fn do_encode_goose() -> Vec<u8> {
     let header = EthernetHeader {
         dst_addr: [0x01, 0x0c, 0xcd, 0x01, 0x00, 0x00],
@@ -85,6 +87,8 @@ fn do_decode_goose(packet: &[u8]) {
         Err(e) => eprintln!("Decoding failed: {:?}", e),
     }
 }
+
+/* MAC SRC: 52:54:00:12:34:56 */
 
 fn do_encode_smv() -> Vec<u8> {
     let header = EthernetHeader {
@@ -169,8 +173,16 @@ fn main() {
     dump.write_all(&frame).unwrap();
     do_decode_smv(&frame);
 
-    let gen = svgen::run(0.1);
-    let samples = gen.vec_i32(100.0);
+    let mut gen = Generator::new50hz(Phase::Ph0);
+    for packet in 0..3 {
+        gen.run(0.01);
+        let samples = gen.vec_i32(100.0);
+        let mut i = 0;
+        for (time, value) in samples {
+            println!("[{:02}:{:03}]  {:0.6}  {:6}", packet, i, time, value);
+            i += 1;
+        }
+    }
 
     /*
     svgen::hello();
