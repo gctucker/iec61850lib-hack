@@ -228,9 +228,9 @@ fn main() {
     let mut dump = pcap_hack::open("dump.pcap");
     let mut fnum = 0;
     for iter in 0..3 {
-        gen.run(0.008);
-        for (time, value) in gen.data() {
-            let frame = encode_sample(&[*value], sfreq);
+        let data = gen.run(0.008);
+        for (time, value) in data {
+            let frame = encode_sample(&[value], sfreq);
             println!("[{iter:02}:{fnum:04}]  {time:8.6}  {value:06}");
             pcap_hack::append(&mut dump, &frame);
             fnum += 1;
@@ -239,7 +239,7 @@ fn main() {
     dump.flush().unwrap();
 
     println!("\nReading {fnum} frames from Ethernet...");
-    let mut eth = etherhack::open("lo");
+    let mut eth = etherhack::open("enp7s0");
     for i in 0..fnum {
         let pkt = etherhack::recv(&mut eth);
         if !is_smv_frame(&pkt) {
@@ -252,10 +252,6 @@ fn main() {
                 let value = sample.value as f32 / 100.0;
                 println!("  {0:06}  {1:8.3}", sample.value, value);
             }
-        }
-        if true {
-            // Hack to skip every other packet...
-            _ = etherhack::recv(&mut eth);
         }
     }
 }

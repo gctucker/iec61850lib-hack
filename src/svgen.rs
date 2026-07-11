@@ -16,10 +16,8 @@ pub struct Generator {
     w: f32,                 // angular frequency in rad/s
     sfreq: f32,             // sampling frequency
     step: f32,              // sampling period
-    i: u32,                 // data buffer index
     t0 : f32,               // time offset
     pub t: f32,             // sample time
-    data: Vec<(f32, f32)>,  // data buffer with (time, value) samples
 }
 
 pub enum Phase {
@@ -38,8 +36,8 @@ impl Generator {
         let sfreq = 4000.0;
         let step = 1.0 / sfreq;
         Generator{
-            f: 50.0, a: peak, ph: ph, w: w, sfreq: sfreq, step: step, i: 0,
-            t0: 0.0, t: 0.0, data: Vec::new(),
+            f: 50.0, a: peak, ph: ph, w: w, sfreq: sfreq, step: step,
+            t0: 0.0, t: 0.0,
         }
     }
 
@@ -47,19 +45,9 @@ impl Generator {
         self.sfreq
     }
 
-    pub fn data(&self) -> &Vec<(f32, f32)> {
-        &self.data
-    }
-
-    pub fn clear(&mut self) {
-        self.data.clear();
-        self.i = 0;
-        self.t0 = self.t;
-    }
-
     pub fn reset(&mut self, offset: f32) {
-        self.t = offset;
-        self.clear();
+        self.t0 = offset;
+        self.t = self.t0;
     }
 
     pub fn sample(&mut self) -> f32 {
@@ -67,16 +55,15 @@ impl Generator {
         self.a * x.sin()
     }
 
-    pub fn run(&mut self, duration: f32) {
-        self.clear();
-        self.data.reserve((duration / self.step) as usize);
-        let finish = self.t + duration;
-        while self.t < finish {
+    pub fn run(&mut self, duration: f32) -> Vec<(f32, f32)> {
+        let len = (duration / self.step) as usize;
+        let mut data: Vec<(f32, f32)> = Vec::with_capacity(len);
+        for i in 0..len {
+            self.t = self.t0 + i as f32 * self.step;
             let value = self.sample();
-            self.data.push((self.t, value));
-            self.i += 1;
-            self.t = self.t0 + self.i as f32 * self.step;
+            data.push((self.t, value));
         }
+        data
     }
 }
 
